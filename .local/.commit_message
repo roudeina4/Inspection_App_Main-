@@ -1,0 +1,26 @@
+Immediate media upload: fix inspector photos not reaching PM view
+
+Root cause: When the inspector captured photos on mobile, File objects were
+stored only in browser memory (as blob URLs). If the browser restarted
+(camera trigger issue), File objects serialized to empty {} in localStorage.
+On submission, formData.append('media_N', {}) sent nothing, so no media
+records were created in the database.
+
+Fix:
+- Added /api/media/upload-temp endpoint for immediate file uploads
+- Photos/videos are now uploaded to the server immediately when captured,
+  not waiting for final form submission
+- MediaPreview interface extended with uploadedUrl and uploading fields
+- On submission, pre-uploaded URLs are passed via mediaUrl_N fields
+  instead of re-uploading the File object
+- Draft restore filters out media with invalid/empty File objects
+  and uses uploadedUrl for preview when available
+- Upload status indicators: spinning loader during upload, green checkmark
+  when successfully uploaded to server
+
+Security hardening (per code review):
+- Server validates pre-uploaded URLs: must start with /uploads/, no path
+  traversal, and file must exist on disk
+- Temp upload endpoint restricts to image/video MIME types only
+- Applied to all three submission handlers: full inspection, onboarding
+  inspection, and issues

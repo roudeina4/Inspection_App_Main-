@@ -1,0 +1,97 @@
+I already have a working inspection template builder in React (areas, items, drag/drop custom fields, and the right “Item Settings” panel). I need a UI/layout refactor to fix navigation and reduce scrolling for the “Full Inspection” template (8 areas / 50+ items). Please reuse existing components and data—don’t redesign the whole app.
+
+Goal
+
+Make navigation by inspection area easy (Bedroom, Kitchen, etc.).
+
+Keep the “Designer Fields” panel for custom fields only.
+
+The canvas should show one area at a time (no huge long scroll).
+
+Required layout changes (3-column overall)
+LEFT SIDEBAR: split into 2 stacked sections
+
+Replace the current left “Designer Fields” sidebar with a single sidebar that contains:
+
+A) Top section: Inspection Areas
+
+Title: “Inspection Areas”
+
+List all areas (Bedroom, Towels, Bathroom, Living Room, TV/Media Unit, Kitchen, Dining & Hallways, General)
+
+Each row shows:
+
+area name
+
+item count (ex: Kitchen — 15)
+
+Clicking an area sets it as active
+
+Active area is highlighted
+
+This section should be vertically scrollable if needed
+
+B) Bottom section: Custom Fields
+
+Title: “Custom Fields”
+
+This section should contain ONLY the draggable field blocks (Condition, Notes, Photos/Videos, Exists Yes/No, Count, Checkbox, Dropdown, Radio Group, etc.)
+
+Preserve existing drag-and-drop behavior and block configs.
+
+This section should also be scrollable if needed.
+
+Implementation: use CSS flex column layout with two panels (top grows, bottom grows), both scrollable.
+
+CENTER CANVAS: show one area at a time
+
+Currently the canvas renders all areas stacked, which is too long.
+Change it so:
+
+The canvas renders only the selected area’s items:
+
+selectedAreaId state controls what is shown
+
+Filter items by selectedAreaId
+
+Add a header above the items list:
+
+Bedroom (6 items)
+
+Keep existing item cards and per-item controls exactly the same (delete, reorder if exists, etc.)
+
+Keep “Add Area” / “Add Item” buttons if they already exist (no need to invent new features).
+
+RIGHT PANEL: keep Item Settings as-is
+
+When clicking an item, open/update the existing Item Settings panel exactly like it works today.
+
+Technical requirements (React)
+
+Don’t change backend/API unless required.
+
+Don’t rewrite the data model. Use existing areas, items, template, etc.
+
+Add minimal state at the builder level:
+
+const [selectedAreaId, setSelectedAreaId] = useState(areas?.[0]?.id)
+
+When areas load, default to first area if none selected.
+
+Canvas should render:
+
+const selectedArea = areas.find(a => a.id === selectedAreaId)
+
+const visibleItems = items.filter(i => i.areaId === selectedAreaId) (or your existing structure)
+
+Ensure drag/drop custom fields still works (only moved into “Custom Fields” section).
+
+Keep styling consistent with existing purple theme.
+
+Deliverable:
+
+Updated layout with left sidebar split into (Inspection Areas + Custom Fields)
+
+Selecting an area updates the canvas to show only that area
+
+No regression in item settings and drag/drop fields

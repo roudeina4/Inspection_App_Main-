@@ -1,0 +1,108 @@
+Build “TBA INSPECTION CHECKLIST APP” as a production-style full-stack web app.
+
+FRONTEND (must):
+- Use React (via Next.js 14+ App Router) + TypeScript
+- Styling: Tailwind CSS
+- Mobile-first UI for Cleaner/Inspector flows (works perfectly on phones)
+- Desktop portal UI for PM/Admin
+
+BACKEND (choose the most accurate backend for this app):
+- Use Next.js backend (Route Handlers / server actions) as the API layer
+- Database: PostgreSQL + Prisma ORM
+- Auth: email/password login using JWT session cookies (httpOnly) + role-based access (CLEANER, INSPECTOR, PM, ADMIN)
+- File uploads: implement a StorageService abstraction:
+  - Local disk storage in dev (save to /public/uploads)
+  - S3-compatible adapter stub (env vars for later)
+- Email notifications: EmailService abstraction
+  - Dev mode: store outgoing messages in DB table EmailLog and print to console
+  - Prod: SMTP env vars supported
+- PDF report generation (server-side) for onboarding inspection reports:
+  - Generate PDF on submit, store path/url in DB (InspectionTask.reportPdfUrl)
+
+CORE FEATURES (must implement end-to-end):
+1) Cleaner/Inspector Home (mobile)
+- Buttons: Quick Report, Full Inspection (cleaner), Onboarding Inspection (inspector)
+- “Assigned to me” list of tasks
+
+2) Quick Report Flow (mobile)
+- Select Unit
+- Confirm/select Responsible PM (required if not preassigned)
+- Upload at least 1 photo or video (mandatory)
+- Description required
+- On submit: create QuickReport + Media + Notification + EmailLog to PM
+
+3) Full Inspection Flow (mobile)
+- Pick assigned task or select unit
+- Must have responsible PM selected
+- Room-by-room checklist (one room at a time)
+- Progress indicator
+- “Next Room” disabled until all required items completed
+- EACH checklist item requires:
+  - Pass/Fail/N/A or Yes/No
+  - At least 1 photo or video (mandatory for every item)
+- Cannot submit unless all items have a result AND required media uploaded
+- On submit: store all ChecklistResponses + Media; notify & email PM with summary + links
+
+4) Onboarding Inspection Flow (mobile)
+- Similar room-by-room flow
+- Item result options:
+  - MISSING (no photo required but optional)
+  - NEED_REPLACEMENT (reason note required + photo required)
+  - GOOD_CONDITION (photo required)
+- Issues & Damages section: add multiple issues; each requires at least 1 media
+- On submit: auto-generate an “owner-ready” report page + PDF
+- Notify & email responsible PM with report link + PDF link
+
+5) Admin/PM Portal (web)
+- Dashboard counts (new quick reports, assigned, submitted)
+- Units CRUD
+- Users CRUD + role assignment
+- Create Inspection Tasks:
+  - Unit, assignee (cleaner/inspector), scheduledAt, responsible PM (recommended)
+- Task list with filters: unit, date, assignee, PM, status
+- Review pages:
+  - Quick report detail with media
+  - Full inspection detail room-by-room with media
+  - Onboarding report view + PDF link
+- Permissions:
+  - Admin sees all
+  - PM sees items where responsiblePmId = them
+  - Cleaner/Inspector sees only assigned to them
+
+DATABASE MODELS (Prisma):
+- User(id, name, email unique, passwordHash, role, isActive, createdAt)
+- Unit(id, propertyName, unitNumber, address, notes, isActive)
+- InspectionTemplate(id, name, type FULL_INSPECTION|ONBOARDING, roomsJson, version, isActive, createdAt)
+- InspectionTask(id, type, unitId, assignedToUserId, responsiblePmId nullable, scheduledAt nullable, status ASSIGNED|IN_PROGRESS|SUBMITTED|REVIEWED|ARCHIVED, createdById, reportPdfUrl nullable, createdAt, updatedAt)
+- ChecklistResponse(id, inspectionTaskId, roomKey, itemKey, result enum, notes nullable, severity nullable, requiredMediaSatisfied boolean, createdAt)
+- Media(id, inspectionTaskId nullable, checklistResponseId nullable, quickReportId nullable, type PHOTO|VIDEO, url, timestampCapturedAt, uploadedAt)
+- QuickReport(id, unitId, createdById, responsiblePmId, description, status NEW|ACKNOWLEDGED|RESOLVED, createdAt)
+- Notification(id, userId, type, title, body, linkUrl, readAt nullable, createdAt)
+- EmailLog(id, toEmail, subject, bodyText, createdAt, relatedQuickReportId nullable, relatedInspectionTaskId nullable)
+- AuditLog(id, actorUserId, action, entityType, entityId, metaJson, createdAt)
+
+SEED DATA (must):
+- Create sample users: admin, pm, cleaner, inspector (with passwords in README)
+- Create sample units
+- Seed default templates:
+  - FULL_INSPECTION rooms: Entry, Living Room, Kitchen, Bedroom, Bathroom, Safety
+  - Include Living Room items: Couch Condition, Coffee Table Condition, TV Screen Condition, Curtains/Blinds Working, Window Condition, Floor Condition, Overall Room Ready for Guest (Yes/No; if No, notes required)
+  - ONBOARDING basic room template + Issues & Damages structure
+
+UX RULES (strict):
+- Required fields cannot be skipped
+- Next Room disabled until current room required items done
+- Submission blocked until completeness validation passes
+- Media must be attached according to rules
+- Autosave in progress locally (localStorage) and restore after refresh
+
+PROJECT STRUCTURE:
+- Use a single Next.js project
+- /app for routes (App Router)
+- /lib for services (StorageService, EmailService)
+- /prisma schema + migrations + seed script
+- Provide a README with:
+  - env vars: DATABASE_URL, JWT_SECRET, BASE_URL, STORAGE_MODE=local|s3, SMTP_* (optional), S3_* (optional)
+  - setup steps (migrate, seed, dev run)
+
+Make sure the app runs end-to-end locally in Replit with PostgreSQL and local file storage.

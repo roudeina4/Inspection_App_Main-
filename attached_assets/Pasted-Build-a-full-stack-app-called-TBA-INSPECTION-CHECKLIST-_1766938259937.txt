@@ -1,0 +1,270 @@
+Build a full-stack app called “TBA INSPECTION CHECKLIST APP” with TWO major modules:
+(1) “TBA Full Inspection - Issue Reporting App”
+(2) “Onboarding Inspection Checklist Blueprint”
+
+The product must support two user experiences:
+A) Cleaner / Inspector experience (mobile-first web UI; responsive, works great on phones)
+B) PM / Supervisor / Admin web portal (desktop-first, but responsive too)
+
+IMPORTANT: Implement strict validation rules: required fields can’t be skipped, room-by-room progression rules, and mandatory photo/video evidence rules.
+
+========================
+1) TECH STACK (use these defaults)
+========================
+- Frontend: React + TypeScript + Tailwind
+- Backend: Node.js + Express (TypeScript)
+- Database: PostgreSQL using Prisma ORM
+- Auth: email+password login with JWT sessions
+- File storage for photos/videos: use S3-compatible storage (implement with a local dev fallback using disk storage; abstract behind a StorageService so we can swap to S3 later)
+- Email notifications: use a provider abstraction. For dev, log emails to console + store in DB “EmailLog”. Provide SMTP config env vars for production.
+- Realtime notifications: implement in-app notifications (DB table) + optional websocket (Socket.IO) for live updates in portal. If websocket is too much, polling every 10–15s is acceptable in MVP.
+
+Provide a clean folder structure:
+- /server (Express + Prisma)
+- /client (React)
+- /prisma
+Include README with setup steps and environment variables.
+
+========================
+2) USER ROLES & PERMISSIONS
+========================
+Roles:
+- CLEANER (used for Full Inspection and Quick Report)
+- INSPECTOR (used for Onboarding inspections; can also share same UI patterns)
+- PM (Supervisor / Property Manager)
+- ADMIN
+
+Permissions:
+- CLEANER/INSPECTOR: can view only their assigned inspections + create Quick Reports + submit inspections they are assigned to.
+- PM: can view inspections/reports where they are the “responsible PM”, plus anything assigned to them; can review reports.
+- ADMIN: full access (manage users, units, assignments, templates).
+
+========================
+3) CORE ENTITIES (DATABASE MODELS)
+========================
+Create Prisma models (with migrations) for:
+
+User:
+- id, name, email (unique), passwordHash, role (enum), isActive, createdAt
+
+Unit:
+- id, propertyName, unitNumber, address, notes, isActive
+
+InspectionTemplate:
+- id, name, type enum: FULL_INSPECTION | ONBOARDING
+- rooms: JSON (room array; each room has items; each item has label, required boolean, input type, etc.)
+- version, isActive, createdAt
+
+InspectionTask:
+- id, type enum FULL_INSPECTION | ONBOARDING
+- unitId, assignedToUserId (cleaner/inspector), responsiblePmId (nullable)
+- scheduledAt (nullable), status enum: ASSIGNED | IN_PROGRESS | SUBMITTED | REVIEWED | ARCHIVED
+- createdById, createdAt, updatedAt
+
+ChecklistResponse:
+- id, inspectionTaskId, roomKey, itemKey
+- result enum: PASS | FAIL | NA | YES | NO | MISSING | NEED_REPLACEMENT | GOOD
+- notes (nullable)
+- severity enum (nullable) LOW|MED|HIGH
+- requiredMediaSatisfied boolean
+- createdAt
+
+Media:
+- id, inspectionTaskId, checklistResponseId (nullable for quick report), quickReportId (nullable)
+- type enum PHOTO|VIDEO
+- url, timestampCapturedAt, uploadedAt
+
+QuickReport:
+- id, unitId, createdById (cleaner), responsiblePmId
+- description
+- createdAt
+- status enum: NEW | ACKNOWLEDGED | RESOLVED
+
+Notification:
+- id, userId, type enum: QUICK_REPORT | INSPECTION_SUBMITTED | INSPECTION_ASSIGNED
+- title, body, linkUrl, readAt (nullable), createdAt
+
+EmailLog:
+- id, toEmail, subject, bodyText, createdAt, relatedQuickReportId (nullable), relatedInspectionTaskId (nullable)
+
+AuditLog:
+- id, actorUserId, action, entityType, entityId, meta JSON, createdAt
+
+========================
+4) PM ASSIGNMENT LOGIC (NOTIFICATIONS ROUTING)
+========================
+When creating an InspectionTask (admin/pm portal), allow setting:
+- Unit
+- Cleaner/Inspector
+- Responsible PM (recommended)
+
+Backup option:
+- If responsiblePmId is null, the Cleaner/Inspector must select a PM from a dropdown before submitting a Quick Report or Inspection.
+
+Enforce: no report/submission can be completed without a responsible PM selected.
+
+========================
+5) CLEANER / INSPECTOR APP: HOME & FLOWS
+========================
+Mobile-first home screen shows:
+- “Quick Report”
+- “Full Inspection” (for cleaners)
+- “Onboarding Inspection” (for inspectors)
+
+A) QUICK REPORT FLOW
+Steps:
+1. Choose unit (searchable dropdown)
+2. Confirm/select Responsible PM (auto-filled if pre-assigned; else required dropdown)
+3. Capture photo or video (mandatory)
+4. Add short description (required, min 5 chars)
+5. Submit
+
+Rules:
+- Media required (at least 1)
+- Media auto timestamped (timestampCapturedAt = client time; also store server received time)
+- On submit:
+  - Create QuickReport + Media
+  - Create Notification for responsible PM
+  - Send email to responsible PM with unit info, timestamp, description, and media links
+
+B) FULL INSPECTION FLOW (CLEANER)
+Steps:
+1. Choose unit (or pick from “Assigned to me” list)
+2. Confirm/select Responsible PM (same rule)
+3. Room-by-room checklist UI:
+   - Show ONE room at a time
+   - Progress indicator (rooms completed / total)
+   - “Next Room” disabled until all required items in current room completed
+4. Each checklist item:
+   - Pass/Fail/N/A (or Yes/No depending on item)
+   - REQUIRED media upload for every item (at least 1 photo OR video)
+   - Failed items optionally show notes + severity dropdown
+5. Cannot submit inspection unless:
+   - All rooms completed
+   - Every item has result selected
+   - Every item has at least 1 media attached
+6. Submit creates:
+   - ChecklistResponses + Media records
+   - Update InspectionTask status to SUBMITTED
+   - Create Notification for responsible PM
+   - Send full inspection email summary with:
+     - unit details
+     - timestamp range
+     - checklist results breakdown
+     - links to media per item
+
+Implement “resume in-progress”: if user closes, they can continue later.
+
+========================
+6) FULL INSPECTION CHECKLIST TEMPLATE (MVP DATA)
+========================
+Seed the database with a default FULL_INSPECTION template including rooms like:
+- Entry, Living Room, Kitchen, Bedroom, Bathroom, Safety
+Each room has items with required=true.
+
+In the UI, demonstrate the “Living Room” example items:
+- Couch Condition
+- Coffee Table Condition
+- TV Screen Condition
+- Curtains/Blinds Working
+- Window Condition
+- Floor Condition
+- Overall Room Ready for Guest (Yes/No; if No, notes required)
+All require media.
+
+========================
+7) ONBOARDING INSPECTION MODULE (INSPECTOR)
+========================
+Implement a parallel flow “Onboarding Inspection” similar to Full Inspection but with different result options:
+For onboarding checklist items, each item can be:
+- MISSING
+- NEED_REPLACEMENT (requires reason note)
+- GOOD_CONDITION
+Rules:
+- Photo required for NEED_REPLACEMENT and GOOD_CONDITION
+- Photo NOT required if MISSING (but allow optional)
+- Enforce required inputs (result selection; reason if need replacement)
+
+The onboarding checklist structure is “pending” in spec, so implement:
+- A simple template with the same room-based structure
+- A section called “Issues & Damages” where inspector can add multiple issue entries:
+  - title, description, severity, media required (at least 1)
+- The system must generate an “owner-ready report” immediately upon submission:
+  - Executive summary (counts of missing, need replacement, good)
+  - Room-by-room condition overview
+  - Issues & damages list with photos
+Output formats:
+- Web dashboard report view
+- PDF export (server-side PDF generation)
+
+PDF generation:
+- Use a Node PDF library (e.g., pdfkit) and embed images as thumbnails with captions.
+- Store generated PDF URL/path in DB (InspectionTask.reportPdfUrl)
+
+On submit:
+- Notify responsible PM + email them with the report link + PDF link.
+
+Success metrics to support:
+- inspection-to-report under 5 minutes (optimize UX, no unnecessary steps)
+- zero follow-up due to validation completeness
+
+========================
+8) ADMIN / PM WEB PORTAL
+========================
+Portal pages:
+- Dashboard (cards with counts: new quick reports, inspections assigned, submitted awaiting review)
+- Units management (CRUD)
+- Users management (CRUD; role assignment)
+- Inspection Tasks (list/filter by unit, date, cleaner/inspector, PM, status)
+  - Create Inspection Task (assign unit, assignee, responsible PM, schedule)
+  - Edit/reassign/delete task
+- Quick Reports (list/filter; click to view detail with media)
+- Inspection Reports (submitted inspections; click to view room-by-room results + media)
+- Templates (view default templates; allow admin to edit JSON template in a simple form or JSON editor)
+
+Filters required:
+- property/unit
+- date range
+- cleaner/inspector
+- responsible PM
+- status
+
+Visibility:
+- Admin sees all.
+- PM sees items where they are responsiblePmId.
+
+========================
+9) NOTIFICATIONS
+========================
+- In-app notification bell in portal and mobile app
+- Create notifications for:
+  - QUICK_REPORT submitted
+  - INSPECTION_ASSIGNED
+  - INSPECTION_SUBMITTED
+- Also send email for Quick Reports and for Inspection Submission (full + onboarding)
+
+========================
+10) UX REQUIREMENTS
+========================
+- Mobile-first inspection UI with big buttons for photo/video capture/upload
+- Clearly mark required items with a red asterisk
+- Disable navigation until requirements met
+- Autosave responses locally (localStorage) and sync to server as draft (optional but preferred)
+- Prevent accidental loss: confirm before leaving an in-progress inspection
+
+========================
+11) DELIVERABLES
+========================
+Generate all code for client + server + prisma schema + seed script.
+Include:
+- sample seed users: admin, pm, cleaner, inspector
+- sample units
+- seed templates for FULL_INSPECTION and ONBOARDING
+Provide a README with:
+- how to run migrations
+- how to run dev servers
+- env vars: DATABASE_URL, JWT_SECRET, STORAGE_MODE, SMTP_*, BASE_URL
+
+Make sure the app runs end-to-end with local storage mode and console email logging.
+
+Finally, add a “Demo Mode” toggle in env that disables auth and logs in as a selected role for testing (admin/pm/cleaner/inspector).

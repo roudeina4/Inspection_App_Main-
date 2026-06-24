@@ -1,0 +1,67 @@
+Bedroom:
+Pillows: [# of pillows]
+Sheets (including spares): [# of sheets]
+Duvet Covers (including spares): [# of duvet covers]
+Closet Doors: [Working well: Yes/No]
+Enough hangers (min 10): [Yes/No]
+
+Towels:
+Body: [# of body towels]
+Hand: [# of hand towels]
+Face: [# of face towels]
+
+Bathroom:
+Fan Working: [Yes/No]
+Faucets: [Working well: Yes/No, Leaks: Yes/No]
+Hot and cold water: [Yes/No]
+Clogs: [Yes/No]
+Toilet: [Noisy: Yes/No]
+Shower Curtain/Glass panel: [Condition: Good/Needs attention]
+Hairdryer: [Working: Yes/No] Location:
+Silicone (sink/bathtub/shower):  [Condition: Good/Needs attention(minor/moderate/severe)]
+
+Living Room:
+Couch Condition: [Good/Needs attention]
+Cushions: [# of cushions, Condition: Good/Needs attention]
+Coffee Table: [Condition: Good/Needs attention]
+
+TV/Media Unit:
+TV Remote: [Working: Yes/No] - if No, Battery Type: [Battery type]
+
+Kitchen:
+Refrigerator: [Working: Yes/No, Condition: Good/Needs attention]
+Stove/Oven: [Working: Yes/No, Condition: Good/Needs attention]
+Microwave: [Working: Yes/No, Condition: Good/Needs attention]
+Dishwasher: [Working: Yes/No, Condition: Good/Needs attention]
+Coffee machine: [Exists: Yes/No, Condition: Good/Needs attention]
+Countertops: [Condition: Good/Needs attention]
+Sink/Faucets: [Working: Yes/No, Leaks: Yes/No]
+Cabinets: [Condition: Good/Needs attention]
+Pots: [# of pots] [Condition: Good/Needs attention]
+Pans: [# of pans] [Condition: Good/Needs attention]
+Glasses: [min of 6: Yes/No]
+Cutlery (forks/spoons for at least 2 persons): [Yes/No]
+Knife Set: [Available: Yes/No, Any knives missing: Yes/No]
+Oven Mitts: [Available: Yes/No]
+Electric Kettle: [Damaged: Yes/No]
+Silicone (sink/cabinets):  [Condition: Good/Needs attention(minor/moderate/severe)]
+
+Dining Area and Hallways:
+Dining Table: [Condition: Good/Needs attention]
+Chairs: [# of chairs, Condition: Good/Needs attention]
+Closets/Storage: [Condition: Good/Needs attention]
+Vacuum Condition: [Good/Needs attention]
+
+General:
+All Lighting fixtures and lamps: [Working: Yes/No] if No: [Bulb base]
+Doors/Locks: [Working: Yes/No]
+Windows: [Condition: Good/Needs attention, Locks working: Yes/No]
+Flooring: [Condition: Good/Needs attention]
+Walls/Paint: [Condition: Good/Needs attention]
+Heating/Cooling System: [Working: Yes/No]
+WiFi: [Working: Yes/No]
+Balcony: [Condition: Good/Needs attention]
+
+** Very Important:
+- Please take pictures of ALL ITEMS
+- If anything needs attention or is damaged, add a comment in Guesty with pictures and/or videos (WhatsApp): [Yes/No]
